@@ -151,6 +151,9 @@ class Bot(object):
             for line in self.__log_buffer:
                 getattr(self.logger, line[0])(line[1])
 
+        # We initialize parent classes here, because now they can access the logger
+        super().__init__()
+
         try:
             self.logger.info('Bot is starting.')
             self.__load_runtime_configuration()
