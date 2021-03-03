@@ -34,6 +34,7 @@ from pathlib import Path
 import importlib
 import inspect
 import pathlib
+import textwrap
 
 import dateutil.parser
 from dateutil.relativedelta import relativedelta
@@ -834,7 +835,7 @@ def list_all_bots() -> str:
             name = mod.BOT.__name__
             keys = {}
             variables = sorted(
-                (name, value) for name, value in vars(mod.BOT).items() 
+                (name, value) for name, value in vars(mod.BOT).items()
                 if not inspect.ismethod(value) and
                 not inspect.isfunction(value) and
                 not inspect.isclass(value) and
@@ -852,7 +853,7 @@ def list_all_bots() -> str:
 
             bots[file.parts[-3:][0].capitalize()][name] = {
                 "module": mod.__name__,
-                "description": mod.BOT.__doc__,
+                "description": textwrap.dedent(mod.BOT.__doc__),
                 "parameters": keys
             }
     return bots
