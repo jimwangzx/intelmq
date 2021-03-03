@@ -90,7 +90,7 @@ class MISPAPIOutputBot(OutputBot):
     misp_url: str = None
     significant_fields: str = None
 
-    is_multithreadable = False
+    __is_multithreadable = False
 
     def init(self):
         if pymisp is None and import_fail_reason == 'syntax':
