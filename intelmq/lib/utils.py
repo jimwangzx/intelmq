@@ -30,6 +30,10 @@ import traceback
 import warnings
 import zipfile
 from typing import Any, Dict, Generator, Iterator, Optional, Sequence, Union
+from pathlib import Path
+import importlib
+import inspect
+import pathlib
 
 import dateutil.parser
 from dateutil.relativedelta import relativedelta
@@ -44,6 +48,7 @@ __all__ = ['base64_decode', 'base64_encode', 'decode', 'encode',
            'reverse_readline', 'error_message_from_exc', 'parse_relative',
            'RewindableFileHandle',
            'file_name_from_response',
+           'list_all_bots',
            ]
 
 # Used loglines format
@@ -808,3 +813,46 @@ def file_name_from_response(response: requests.Response) -> str:
     except KeyError:
         file_name = response.url.split("/")[-1]
     return file_name
+
+
+def list_all_bots() -> str:
+    bot_groups = ['Collectors', 'Parsers', 'Experts', 'Outputs']
+    bot_types = [
+        'CollectorBot',
+        'ParserBot',
+        'OutputBot',
+        'Bot'
+    ]
+    bots = {}
+    for bot_group in bot_groups:
+        bots[bot_group] = {}
+
+    botfiles = [botfile for botfile in pathlib.Path('intelmq/bots').glob('**/*.py') if botfile.is_file() and botfile.name != '__init__.py']
+    for file in botfiles:
+        mod = importlib.import_module("intelmq.bots.{}.{}.{}".format(file.parts[-3:][0], file.parts[-2:][0], file.stem))
+        if hasattr(mod, 'BOT'):
+            name = mod.BOT.__name__
+            keys = {}
+            variables = sorted(
+                (name, value) for name, value in vars(mod.BOT).items() 
+                if not inspect.ismethod(value) and
+                not inspect.isfunction(value) and
+                not inspect.isclass(value) and
+                not inspect.isroutine(value) and
+                not name.isupper() and
+                not name.startswith('_')
+            )
+            for key, value in variables:
+                keys[key] = value
+
+            for t in bot_types:
+                if name == t:
+                    continue
+                name = name.replace(t, '')
+
+            bots[file.parts[-3:][0].capitalize()][name] = {
+                "module": mod.__name__,
+                "description": mod.BOT.__doc__,
+                "parameters": keys
+            }
+    return bots
